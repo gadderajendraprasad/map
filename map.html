@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>
+		map analysis
+	</title>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+	<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+	<style>
+		#map {position: absolute;top: 0;bottom: 0;right: 0;left: 0;}
+	</style>
+</head>
+<body>
+	<div id="map"></div>
+
+	<script type="text/javascript">
+	var state="WEST BENGAL";
+	var path="./data/WB.json";
+
+	var data,alt,colors;
+	$.getJSON(path, function(json) {
+    	 data=json;
+	});
+	$.getJSON("./alt.json", function(json) {
+    	 alt=json;
+	});
+	$.getJSON("./colors.json", function(json) {
+    	 colors=json;
+	});
+	function rgba2hex(rgb) {
+		var ans="rgba(";
+		ans+=(rgb[0]*255);
+		ans+=",";
+		ans+=(rgb[1]*255);
+		ans+=",";
+		ans+=(rgb[2]*255);
+		ans+=",";
+		ans+=(rgb[3]);
+		return ans+")"
+	}
+
+	function getColor(d,no) {
+		if (d==state){
+			try{
+				return rgba2hex(colors[alt[data[no]['lead']]]);}
+			catch{
+				console.log("Failed for",no)
+      			}
+			}
+    	return 'snow';
+    }
+
+    function style(feature) {
+      return {
+          fillColor: getColor(feature.properties.ST_NAME,feature.properties.AC_NO),
+          weight: 0.5,
+          opacity:0.7,
+          color: (feature.properties.ST_NAME=="WEST BENGAL")?'black':'snow',
+          fillOpacity: .7
+      };
+    }
+
+    function onEachFeature(feature, layer) {
+    	if (feature.properties.ST_NAME!=state){return;}
+    	try{
+    	var output;
+    	output='<b>AC NAME: </b>'+feature.properties.AC_NAME+'<br>';
+    	output+='<b>AC NO:  </b>'+feature.properties.AC_NO+'<hr>';
+    	output+='<b>WINNER:  </b>'+data[feature.properties.AC_NO]['leadName']+'<br>';
+    	output+='<b>WON BY:  </b>'+data[feature.properties.AC_NO]['lead']+'<br>';
+    	output+='<b>RUNNER:  </b>'+data[feature.properties.AC_NO]['opsName']+'<br>';
+    	output+='<b>LOST BY:  </b>'+data[feature.properties.AC_NO]['ops']+'<br>';
+    	output+='<b>margin:  </b>'+data[feature.properties.AC_NO]['margin']+'<br>';
+        layer.bindPopup('<p>'+output+'</p>');}
+        catch(err){}
+    }
+	</script>
+
+
+	<script type="text/javascript">
+		var map=L.map("map").setView([24.5266711,88.0825198], 7);
+		$.getJSON("ac.geojson",function(data){
+				L.geoJson(data,{style:style,onEachFeature: onEachFeature}).addTo(map);
+			});
+	</script>
+</body>
+</html>
